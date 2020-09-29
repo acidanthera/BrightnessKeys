@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		3573FE3225223B8500DFC9F4 /* BrightnessKeys.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 3573FE3125223B8500DFC9F4 /* BrightnessKeys.hpp */; };
 		3573FE3425223B8500DFC9F4 /* BrightnessKeys.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3573FE3325223B8500DFC9F4 /* BrightnessKeys.cpp */; };
+		358E312F2523A1E400C409AD /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 358E312E2523A1E400C409AD /* libkmod.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -16,6 +17,7 @@
 		3573FE3125223B8500DFC9F4 /* BrightnessKeys.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = BrightnessKeys.hpp; sourceTree = "<group>"; };
 		3573FE3325223B8500DFC9F4 /* BrightnessKeys.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BrightnessKeys.cpp; sourceTree = "<group>"; };
 		3573FE3525223B8500DFC9F4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		358E312E2523A1E400C409AD /* libkmod.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libkmod.a; path = MacKernelSDK/Library/x86_64/libkmod.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -23,6 +25,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				358E312F2523A1E400C409AD /* libkmod.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -34,6 +37,7 @@
 			children = (
 				3573FE3025223B8500DFC9F4 /* BrightnessKeys */,
 				3573FE2F25223B8500DFC9F4 /* Products */,
+				358E312D2523A1E400C409AD /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -53,6 +57,14 @@
 				3573FE3525223B8500DFC9F4 /* Info.plist */,
 			);
 			path = BrightnessKeys;
+			sourceTree = "<group>";
+		};
+		358E312D2523A1E400C409AD /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				358E312E2523A1E400C409AD /* libkmod.a */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -260,6 +272,12 @@
 				CURRENT_PROJECT_VERSION = 1.0.0d1;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Lilu.kext/Contents/Resources";
 				INFOPLIST_FILE = BrightnessKeys/Info.plist;
+				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
+				KERNEL_FRAMEWORK_HEADERS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MODULE_NAME = as.acidanthera.BrightnessKeys;
 				MODULE_VERSION = 1.0.0d1;
@@ -279,6 +297,12 @@
 				CURRENT_PROJECT_VERSION = 1.0.0d1;
 				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Lilu.kext/Contents/Resources";
 				INFOPLIST_FILE = BrightnessKeys/Info.plist;
+				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
+				KERNEL_FRAMEWORK_HEADERS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MODULE_NAME = as.acidanthera.BrightnessKeys;
 				MODULE_VERSION = 1.0.0d1;
