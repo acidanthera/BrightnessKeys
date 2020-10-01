@@ -4,6 +4,7 @@
 **/
 
 #include <Headers/kern_devinfo.hpp>
+#include <Headers/kern_version.hpp>
 #include "BrightnessKeys.hpp"
 
 
@@ -132,7 +133,9 @@ void BrightnessKeys::getBrightnessPanel() {
 bool BrightnessKeys::start(IOService *provider) {
     if (!super::start(provider))
         return false;
-    
+
+    setProperty("VersionInfo", kextVersion);
+
     // get IOACPIPlatformDevice for built-in panel
     getBrightnessPanel();
     
