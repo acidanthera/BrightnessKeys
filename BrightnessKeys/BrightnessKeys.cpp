@@ -1,3 +1,8 @@
+/** @file
+  Copyright (c) 2020, zhen-zen. All rights reserved.
+  SPDX-License-Identifier: BSD-3-Clause
+**/
+
 #include <Headers/kern_devinfo.hpp>
 #include "BrightnessKeys.hpp"
 
