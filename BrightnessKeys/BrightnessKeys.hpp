@@ -1,3 +1,8 @@
+/** @file
+  Copyright (c) 2020, zhen-zen. All rights reserved.
+  SPDX-License-Identifier: BSD-3-Clause
+**/
+
 #include <IOKit/IOService.h>
 #include <IOKit/hidsystem/IOHIKeyboard.h>
 #include <IOKit/acpi/IOACPIPlatformDevice.h>
