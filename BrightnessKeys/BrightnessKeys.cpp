@@ -40,18 +40,18 @@ bool BrightnessKeys::init() {
     return true;
 }
 
-IORegistryEntry* BrightnessKeys::getDeviceByAddress(IORegistryEntry *parent, int address, int mask) {
+IORegistryEntry* BrightnessKeys::getDeviceByAddress(IORegistryEntry *parent, UInt64 address, UInt64 mask) {
     IORegistryEntry* child = NULL;
     auto iter = parent->getChildIterator(gIODTPlane);
     if (iter) {
         IORegistryEntry* dev;
-        int addr;
+        UInt64 addr;
         while ((dev = (IORegistryEntry*)iter->getNextObject())) {
             auto location = dev->getLocation();
             // The device need to be present in ACPI scope and follow the naming convention ('A'-'Z', '_')
             auto name = dev->getName();
             if (location && name && name [0] <= '_' &&
-                sscanf(dev->getLocation(), "%x", &addr) == 1 &&
+                sscanf(dev->getLocation(), "%llx", &addr) == 1 &&
                 (addr & mask) == address) {
                 child = dev;
                 break;
@@ -219,8 +219,7 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
             }
             if (!self->_panelNotified) {
                 self->_panelNotified = true;
-                self->setProperty(kBrightnessKey, "ACPI");
-                self->setProperty(kBrightnessPanel, provider->getName());
+                self->setProperty(kBrightnessPanel, safeString(provider->getName()));
             }
         } else {
             DEBUG_LOG("%s %s received unknown kIOACPIMessageDeviceNotification\n", self->getName(), provider->getName());

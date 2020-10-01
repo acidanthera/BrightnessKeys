@@ -41,7 +41,7 @@ private:
     IONotifier *                _panelNotifiersDiscrete;
     
 public:
-    IORegistryEntry* getDeviceByAddress(IORegistryEntry *parent, int address, int mask = 0xFFFFFFFF);
+    IORegistryEntry* getDeviceByAddress(IORegistryEntry *parent, UInt64 address, UInt64 mask = 0xFFFFFFFF);
     void getBrightnessPanel();
     static IOReturn _panelNotification(void *target, void *refCon, UInt32 messageType, IOService *provider, void *messageArgument, vm_size_t argSize);
     inline void dispatchKeyboardEventX(unsigned int keyCode, bool goingDown, uint64_t time)
