@@ -15,9 +15,9 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>IOKitPersonalities</key>
 	<dict>
 		<key>BrightnessKeys</key>
@@ -36,6 +36,8 @@
 	</dict>
 	<key>OSBundleLibraries</key>
 	<dict>
+		<key>as.vit9696.Lilu</key>
+		<string>1.2.0</string>
 		<key>com.apple.iokit.IOACPIFamily</key>
 		<string>1.0.0d1</string>
 		<key>com.apple.iokit.IOHIDFamily</key>
@@ -50,8 +52,6 @@
 		<string>8.0.0</string>
 		<key>com.apple.kpi.unsupported</key>
 		<string>8.0.0</string>
-		<key>as.vit9696.Lilu</key>
-		<string>1.2.0</string>
 	</dict>
 	<key>OSBundleRequired</key>
 	<string>Console</string>
