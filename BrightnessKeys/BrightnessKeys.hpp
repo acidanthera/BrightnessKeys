@@ -6,6 +6,7 @@
 #include <IOKit/IOService.h>
 #include <IOKit/hidsystem/IOHIKeyboard.h>
 #include <IOKit/acpi/IOACPIPlatformDevice.h>
+#include <IOKit/IOCommandGate.h>
 #include <IOKit/IODeviceTreeSupport.h>
 
 
@@ -39,14 +40,28 @@ private:
     IONotifier *                _panelNotifiers;
     IONotifier *                _panelNotifiersFallback;
     IONotifier *                _panelNotifiersDiscrete;
-    
+
+    IOWorkLoop *workLoop {nullptr};
+    IOCommandGate *commandGate {nullptr};
+
+    IONotifier* _publishNotify {nullptr};
+    IONotifier* _terminateNotify {nullptr};
+    OSSet* _notificationServices {nullptr};
+    const OSSymbol* _deliverNotification {nullptr};
+
+    void dispatchMessageGated(int* message, void* data);
+    bool notificationHandler(void * refCon, IOService * newService, IONotifier * notifier);
+    void notificationHandlerGated(IOService * newService, IONotifier * notifier);
+
 public:
     IORegistryEntry* getDeviceByAddress(IORegistryEntry *parent, UInt64 address, UInt64 mask = 0xFFFFFFFF);
     void getBrightnessPanel();
     static IOReturn _panelNotification(void *target, void *refCon, UInt32 messageType, IOService *provider, void *messageArgument, vm_size_t argSize);
     inline void dispatchKeyboardEventX(unsigned int keyCode, bool goingDown, uint64_t time)
     { dispatchKeyboardEvent(keyCode, goingDown, *(AbsoluteTime*)&time); }
-    
+
+    void dispatchMessage(int message, void* data);
+
     virtual bool init() override;
     virtual bool start(IOService *provider) override;
     virtual void stop(IOService *provider) override;
