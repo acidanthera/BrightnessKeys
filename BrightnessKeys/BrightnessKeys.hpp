@@ -32,22 +32,22 @@ class BrightnessKeys : public IOHIKeyboard {
     OSDeclareDefaultStructors(BrightnessKeys)
 private:
     // ACPI support for panel brightness
-    IOACPIPlatformDevice *      _panel;
-    IOACPIPlatformDevice *      _panelFallback;
-    IOACPIPlatformDevice *      _panelDiscrete;
-    bool                        _panelNotified;
-    bool                        _panelPrompt;
-    IONotifier *                _panelNotifiers;
-    IONotifier *                _panelNotifiersFallback;
-    IONotifier *                _panelNotifiersDiscrete;
+    IOACPIPlatformDevice *      _panel {nullptr};
+    IOACPIPlatformDevice *      _panelFallback {nullptr};
+    IOACPIPlatformDevice *      _panelDiscrete {nullptr};
+    bool                        _panelNotified {false};
+    bool                        _panelPrompt {false};
+    IONotifier *                _panelNotifiers {nullptr};
+    IONotifier *                _panelNotifiersFallback {nullptr};
+    IONotifier *                _panelNotifiersDiscrete {nullptr};
 
     IOWorkLoop *workLoop {nullptr};
     IOCommandGate *commandGate {nullptr};
 
-    IONotifier* _publishNotify {nullptr};
-    IONotifier* _terminateNotify {nullptr};
-    OSSet* _notificationServices {nullptr};
-    const OSSymbol* _deliverNotification {nullptr};
+    IONotifier *_publishNotify {nullptr};
+    IONotifier *_terminateNotify {nullptr};
+    OSSet *_notificationServices {nullptr};
+    const OSSymbol *_deliverNotification {nullptr};
 
     void dispatchMessageGated(int* message, void* data);
     bool notificationHandler(void * refCon, IOService * newService, IONotifier * notifier);
@@ -62,7 +62,6 @@ public:
 
     void dispatchMessage(int message, void* data);
 
-    virtual bool init() override;
     virtual bool start(IOService *provider) override;
     virtual void stop(IOService *provider) override;
     

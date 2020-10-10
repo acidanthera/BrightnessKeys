@@ -41,21 +41,6 @@ typedef struct PS2KeyInfo
 
 OSDefineMetaClassAndStructors(BrightnessKeys, super)
 
-bool BrightnessKeys::init() {
-    if (!super::init())
-        return false;
-    // initialize ACPI support for brightness key
-    _panel = 0;
-    _panelFallback = 0;
-    _panelDiscrete = 0;
-    _panelNotified = false;
-    _panelPrompt = false;
-    _panelNotifiers = 0;
-    _panelNotifiersFallback = 0;
-    _panelNotifiersDiscrete = 0;
-    return true;
-}
-
 IORegistryEntry* BrightnessKeys::getDeviceByAddress(IORegistryEntry *parent, UInt64 address, UInt64 mask) {
     IORegistryEntry* child = NULL;
     auto iter = parent->getChildIterator(gIODTPlane);
@@ -169,22 +154,13 @@ bool BrightnessKeys::start(IOService *provider) {
     if (propertyMatch) {
         IOServiceMatchingNotificationHandler notificationHandler = OSMemberFunctionCast(IOServiceMatchingNotificationHandler, this, &BrightnessKeys::notificationHandler);
 
-      //
-      // Register notifications for availability of any IOService objects wanting to consume our message events
-      //
-      _publishNotify = addMatchingNotification(gIOFirstPublishNotification,
-                                             propertyMatch,
-                                             notificationHandler,
-                                             this,
-                                             0, 10000);
+        //
+        // Register notifications for availability of any IOService objects wanting to consume our message events
+        //
+        _publishNotify = addMatchingNotification(gIOFirstPublishNotification, propertyMatch, notificationHandler, this, 0, 10000);
+        _terminateNotify = addMatchingNotification(gIOTerminatedNotification, propertyMatch, notificationHandler, this, 0, 10000);
 
-      _terminateNotify = addMatchingNotification(gIOTerminatedNotification,
-                                               propertyMatch,
-                                               notificationHandler,
-                                               this,
-                                               0, 10000);
-
-      propertyMatch->release();
+        propertyMatch->release();
     }
 
     // get IOACPIPlatformDevice for built-in panel
