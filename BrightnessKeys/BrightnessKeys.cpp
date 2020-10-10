@@ -26,7 +26,7 @@ typedef struct PS2KeyInfo
 // Constants for brightness keys
 
 #define kBrightnessPanel                    "BrightnessPanel"
-#define kBrightnessKey                      "BrightnessKey"
+#define kBrightnessKey                      "BrightnessKeyRouted"
 
 #ifdef DEBUG
 #define DEBUG_LOG(args...)  do { IOLog(args); } while (0)
@@ -287,6 +287,8 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
             if (!self->_panelNotified) {
                 self->_panelNotified = true;
                 self->setProperty(kBrightnessPanel, safeString(provider->getName()));
+                if (arg == kIOACPIMessageBrightnessUp || arg == kIOACPIMessageBrightnessDown)
+                    self->setProperty(kBrightnessKey, info.eatKey);
             }
         } else {
             DEBUG_LOG("%s %s received unknown kIOACPIMessageDeviceNotification\n", self->getName(), provider->getName());

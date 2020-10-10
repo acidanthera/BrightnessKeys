@@ -36,7 +36,6 @@ private:
     IOACPIPlatformDevice *      _panelFallback {nullptr};
     IOACPIPlatformDevice *      _panelDiscrete {nullptr};
     bool                        _panelNotified {false};
-    bool                        _panelPrompt {false};
     IONotifier *                _panelNotifiers {nullptr};
     IONotifier *                _panelNotifiersFallback {nullptr};
     IONotifier *                _panelNotifiersDiscrete {nullptr};
