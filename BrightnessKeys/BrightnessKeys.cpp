@@ -53,11 +53,6 @@ bool BrightnessKeys::init() {
     _panelNotifiers = 0;
     _panelNotifiersFallback = 0;
     _panelNotifiersDiscrete = 0;
-
-    _deliverNotification = OSSymbol::withCString(kDeliverNotifications);
-    if (!_deliverNotification)
-        return false;
-    _notificationServices = OSSet::withCapacity(1);
     return true;
 }
 
@@ -159,13 +154,19 @@ bool BrightnessKeys::start(IOService *provider) {
     workLoop = IOWorkLoop::workLoop();
     commandGate = IOCommandGate::commandGate(this);
     if (!workLoop || !commandGate || (workLoop->addEventSource(commandGate) != kIOReturnSuccess)) {
-        IOLog("%s Failed to add commandGate", getName());
+        IOLog("%s Failed to add commandGate\n", getName());
+        return false;
+    }
+
+    _notificationServices = OSSet::withCapacity(1);
+    _deliverNotification = OSSymbol::withCString(kDeliverNotifications);
+    if (!_notificationServices || !_deliverNotification) {
+        IOLog("%s Failed to add notification service\n", getName());
         return false;
     }
 
     OSDictionary * propertyMatch = propertyMatching(_deliverNotification, kOSBooleanTrue);
     if (propertyMatch) {
-        // FIXME: freeze and Xcode "jump to definition" also failed
         IOServiceMatchingNotificationHandler notificationHandler = OSMemberFunctionCast(IOServiceMatchingNotificationHandler, this, &BrightnessKeys::notificationHandler);
 
       //
@@ -199,7 +200,7 @@ bool BrightnessKeys::start(IOService *provider) {
         _panelNotifiersDiscrete = _panelDiscrete->registerInterest(gIOGeneralInterest, _panelNotification, this);
     
     if (_panelNotifiers == NULL && _panelNotifiersFallback == NULL && _panelNotifiersDiscrete == NULL) {
-        IOLog("ps2br: unable to register any interests for GFX notifications\n");
+        IOLog("%s unable to register any interests for GFX notifications\n", getName());
         return false;
     }
     
@@ -335,7 +336,7 @@ void BrightnessKeys::dispatchMessageGated(int* message, void* data)
 void BrightnessKeys::dispatchMessage(int message, void* data)
 {
     if (_notificationServices->getCount() == 0) {
-        IOLog("%s No available notification consumer", getName());
+        IOLog("%s No available notification consumer\n", getName());
         return;
     }
     commandGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &BrightnessKeys::dispatchMessageGated), &message, data);
@@ -344,12 +345,12 @@ void BrightnessKeys::dispatchMessage(int message, void* data)
 void BrightnessKeys::notificationHandlerGated(IOService *newService, IONotifier *notifier)
 {
     if (notifier == _publishNotify) {
-        DEBUG_LOG("Notification consumer published: %s", newService->getName());
+        DEBUG_LOG("%s Notification consumer published: %s\n", getName(), safeString(newService->getName()));
         _notificationServices->setObject(newService);
     }
 
     if (notifier == _terminateNotify) {
-        DEBUG_LOG("Notification consumer terminated: %s", newService->getName());
+        DEBUG_LOG("%s Notification consumer terminated: %s\n", getName(), safeString(newService->getName()));
         _notificationServices->removeObject(newService);
     }
 }
