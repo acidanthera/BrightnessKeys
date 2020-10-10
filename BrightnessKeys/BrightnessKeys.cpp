@@ -7,6 +7,9 @@
 #include <Headers/kern_version.hpp>
 #include "BrightnessKeys.hpp"
 
+bool ADDPR(debugEnabled) = false;
+uint32_t ADDPR(debugPrintDelay) = 0;
+
 #define kDeliverNotifications   "RM,deliverNotifications"
 
 // Constants for keyboards
@@ -27,12 +30,6 @@ typedef struct PS2KeyInfo
 
 #define kBrightnessPanel                    "BrightnessPanel"
 #define kBrightnessKey                      "BrightnessKeyRouted"
-
-#ifdef DEBUG
-#define DEBUG_LOG(args...)  do { IOLog(args); } while (0)
-#else
-#define DEBUG_LOG(args...)  do { } while (0)
-#endif
 
 #define BRIGHTNESS_DOWN         0x6b
 #define BRIGHTNESS_UP           0x71
@@ -136,17 +133,20 @@ bool BrightnessKeys::start(IOService *provider) {
 
     setProperty("VersionInfo", kextVersion);
 
+    ADDPR(debugEnabled) = checkKernelArgument("-brkeysdbg") || checkKernelArgument("-liludbgall");
+    PE_parse_boot_argn("liludelay", &ADDPR(debugPrintDelay), sizeof(ADDPR(debugPrintDelay)));
+
     workLoop = IOWorkLoop::workLoop();
     commandGate = IOCommandGate::commandGate(this);
     if (!workLoop || !commandGate || (workLoop->addEventSource(commandGate) != kIOReturnSuccess)) {
-        IOLog("%s Failed to add commandGate\n", getName());
+        SYSLOG("brkeys", "failed to add commandGate");
         return false;
     }
 
     _notificationServices = OSSet::withCapacity(1);
     _deliverNotification = OSSymbol::withCString(kDeliverNotifications);
     if (!_notificationServices || !_deliverNotification) {
-        IOLog("%s Failed to add notification service\n", getName());
+        SYSLOG("brkeys", "failed to add notification service");
         return false;
     }
 
@@ -176,7 +176,7 @@ bool BrightnessKeys::start(IOService *provider) {
         _panelNotifiersDiscrete = _panelDiscrete->registerInterest(gIOGeneralInterest, _panelNotification, this);
     
     if (_panelNotifiers == NULL && _panelNotifiersFallback == NULL && _panelNotifiersDiscrete == NULL) {
-        IOLog("%s unable to register any interests for GFX notifications\n", getName());
+        SYSLOG("brkeys", "unable to register any interests for GFX notifications");
         return false;
     }
     
@@ -218,13 +218,13 @@ void BrightnessKeys::stop(IOService *provider) {
 IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 messageType, IOService *provider, void *messageArgument, vm_size_t argSize) {
     if (messageType == kIOACPIMessageDeviceNotification) {
         if (NULL == target) {
-            DEBUG_LOG("%s kIOACPIMessageDeviceNotification target is null\n", provider->getName());
+            DBGLOG("brkeys", "%s kIOACPIMessageDeviceNotification target is null", provider->getName());
             return kIOReturnError;
         }
         
         auto self = OSDynamicCast(BrightnessKeys, reinterpret_cast<OSMetaClassBase*>(target));
         if (NULL == self) {
-            DEBUG_LOG("%s kIOACPIMessageDeviceNotification target is not a ApplePS2Keyboard\n", provider->getName());
+            DBGLOG("brkeys", "%s kIOACPIMessageDeviceNotification target is not a ApplePS2Keyboard\n", provider->getName());
             return kIOReturnError;
         }
         
@@ -250,7 +250,7 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
                         clock_get_uptime(&info.time);
                         self->dispatchKeyboardEventX(BRIGHTNESS_UP, false, info.time);
                     }
-                    DEBUG_LOG("%s %s ACPI brightness up\n", self->getName(), provider->getName());
+                    DBGLOG("brkeys", "%s ACPI brightness up\n", provider->getName());
                     break;
                     
                 case kIOACPIMessageBrightnessDown:
@@ -271,17 +271,17 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
                         clock_get_uptime(&info.time);
                         self->dispatchKeyboardEventX(BRIGHTNESS_DOWN, false, info.time);
                     }
-                    DEBUG_LOG("%s %s ACPI brightness down\n", self->getName(), provider->getName());
+                    DBGLOG("brkeys", "%s ACPI brightness down", provider->getName());
                     break;
                     
                 case kIOACPIMessageBrightnessCycle:
                 case kIOACPIMessageBrightnessZero:
                 case kIOACPIMessageBrightnessOff:
-                    DEBUG_LOG("%s %s ACPI brightness operation 0x%02x not implemented\n", self->getName(), provider->getName(), *((UInt32 *) messageArgument));
+                    DBGLOG("brkeys", "%s ACPI brightness operation 0x%02x not implemented", provider->getName(), *((UInt32 *) messageArgument));
                     return kIOReturnSuccess;
                     
                 default:
-                    DEBUG_LOG("%s %s unknown ACPI notification 0x%04x\n", self->getName(), provider->getName(), *((UInt32 *) messageArgument));
+                    DBGLOG("brkeys", "%s unknown ACPI notification 0x%04x", provider->getName(), *((UInt32 *) messageArgument));
                     return kIOReturnSuccess;
             }
             if (!self->_panelNotified) {
@@ -291,10 +291,10 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
                     self->setProperty(kBrightnessKey, info.eatKey);
             }
         } else {
-            DEBUG_LOG("%s %s received unknown kIOACPIMessageDeviceNotification\n", self->getName(), provider->getName());
+            DBGLOG("brkeys", "%s received unknown kIOACPIMessageDeviceNotification", provider->getName());
         }
     } else {
-        DEBUG_LOG("%s received %08X\n", provider->getName(), messageType);
+        DBGLOG("brkeys", "%s received %08X", provider->getName(), messageType);
     }
     return kIOReturnSuccess;
 }
@@ -314,7 +314,7 @@ void BrightnessKeys::dispatchMessageGated(int* message, void* data)
 void BrightnessKeys::dispatchMessage(int message, void* data)
 {
     if (_notificationServices->getCount() == 0) {
-        IOLog("%s No available notification consumer\n", getName());
+        SYSLOG("brkeys", "No available notification consumer");
         return;
     }
     commandGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &BrightnessKeys::dispatchMessageGated), &message, data);
@@ -323,12 +323,12 @@ void BrightnessKeys::dispatchMessage(int message, void* data)
 void BrightnessKeys::notificationHandlerGated(IOService *newService, IONotifier *notifier)
 {
     if (notifier == _publishNotify) {
-        DEBUG_LOG("%s Notification consumer published: %s\n", getName(), safeString(newService->getName()));
+        DBGLOG("brkeys", "Notification consumer published: %s", safeString(newService->getName()));
         _notificationServices->setObject(newService);
     }
 
     if (notifier == _terminateNotify) {
-        DEBUG_LOG("%s Notification consumer terminated: %s\n", getName(), safeString(newService->getName()));
+        DBGLOG("brkeys", "Notification consumer terminated: %s", safeString(newService->getName()));
         _notificationServices->removeObject(newService);
     }
 }
