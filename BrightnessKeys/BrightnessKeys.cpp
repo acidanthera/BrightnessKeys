@@ -7,17 +7,29 @@
 #include <Headers/kern_version.hpp>
 #include "BrightnessKeys.hpp"
 
+bool ADDPR(debugEnabled) = false;
+uint32_t ADDPR(debugPrintDelay) = 0;
+
+#define kDeliverNotifications   "RM,deliverNotifications"
+
+// Constants for keyboards
+enum
+{
+    kPS2K_notifyKeystroke = iokit_vendor_specific_msg(202),     // notify of key press (data is PS2KeyInfo*)
+};
+
+typedef struct PS2KeyInfo
+{
+    uint64_t time;
+    UInt16  adbKeyCode;
+    bool    goingDown;
+    bool    eatKey;
+} PS2KeyInfo;
 
 // Constants for brightness keys
 
 #define kBrightnessPanel                    "BrightnessPanel"
-#define kBrightnessKey                      "BrightnessKey"
-
-#ifdef DEBUG
-#define DEBUG_LOG(args...)  do { IOLog(args); } while (0)
-#else
-#define DEBUG_LOG(args...)  do { } while (0)
-#endif
+#define kBrightnessKey                      "BrightnessKeyRouted"
 
 #define BRIGHTNESS_DOWN         0x6b
 #define BRIGHTNESS_UP           0x71
@@ -25,21 +37,6 @@
 #define super IOHIKeyboard
 
 OSDefineMetaClassAndStructors(BrightnessKeys, super)
-
-bool BrightnessKeys::init() {
-    if (!super::init())
-        return false;
-    // initialize ACPI support for brightness key
-    _panel = 0;
-    _panelFallback = 0;
-    _panelDiscrete = 0;
-    _panelNotified = false;
-    _panelPrompt = false;
-    _panelNotifiers = 0;
-    _panelNotifiersFallback = 0;
-    _panelNotifiersDiscrete = 0;
-    return true;
-}
 
 IORegistryEntry* BrightnessKeys::getDeviceByAddress(IORegistryEntry *parent, UInt64 address, UInt64 mask) {
     IORegistryEntry* child = NULL;
@@ -136,6 +133,36 @@ bool BrightnessKeys::start(IOService *provider) {
 
     setProperty("VersionInfo", kextVersion);
 
+    ADDPR(debugEnabled) = checkKernelArgument("-brkeysdbg") || checkKernelArgument("-liludbgall");
+    PE_parse_boot_argn("liludelay", &ADDPR(debugPrintDelay), sizeof(ADDPR(debugPrintDelay)));
+
+    workLoop = IOWorkLoop::workLoop();
+    commandGate = IOCommandGate::commandGate(this);
+    if (!workLoop || !commandGate || (workLoop->addEventSource(commandGate) != kIOReturnSuccess)) {
+        SYSLOG("brkeys", "failed to add commandGate");
+        return false;
+    }
+
+    _notificationServices = OSSet::withCapacity(1);
+    _deliverNotification = OSSymbol::withCString(kDeliverNotifications);
+    if (!_notificationServices || !_deliverNotification) {
+        SYSLOG("brkeys", "failed to add notification service");
+        return false;
+    }
+
+    OSDictionary * propertyMatch = propertyMatching(_deliverNotification, kOSBooleanTrue);
+    if (propertyMatch) {
+        IOServiceMatchingNotificationHandler notificationHandler = OSMemberFunctionCast(IOServiceMatchingNotificationHandler, this, &BrightnessKeys::notificationHandler);
+
+        //
+        // Register notifications for availability of any IOService objects wanting to consume our message events
+        //
+        _publishNotify = addMatchingNotification(gIOFirstPublishNotification, propertyMatch, notificationHandler, this, 0, 10000);
+        _terminateNotify = addMatchingNotification(gIOTerminatedNotification, propertyMatch, notificationHandler, this, 0, 10000);
+
+        propertyMatch->release();
+    }
+
     // get IOACPIPlatformDevice for built-in panel
     getBrightnessPanel();
     
@@ -149,7 +176,7 @@ bool BrightnessKeys::start(IOService *provider) {
         _panelNotifiersDiscrete = _panelDiscrete->registerInterest(gIOGeneralInterest, _panelNotification, this);
     
     if (_panelNotifiers == NULL && _panelNotifiersFallback == NULL && _panelNotifiersDiscrete == NULL) {
-        IOLog("ps2br: unable to register any interests for GFX notifications\n");
+        SYSLOG("brkeys", "unable to register any interests for GFX notifications");
         return false;
     }
     
@@ -174,63 +201,142 @@ void BrightnessKeys::stop(IOService *provider) {
     OSSafeReleaseNULL(_panel);
     OSSafeReleaseNULL(_panelFallback);
     OSSafeReleaseNULL(_panelDiscrete);
+
+    _publishNotify->remove();
+    _terminateNotify->remove();
+    _notificationServices->flushCollection();
+    OSSafeReleaseNULL(_notificationServices);
+    OSSafeReleaseNULL(_deliverNotification);
+
+    workLoop->removeEventSource(commandGate);
+    OSSafeReleaseNULL(commandGate);
+    OSSafeReleaseNULL(workLoop);
+
     super::stop(provider);
 }
 
 IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 messageType, IOService *provider, void *messageArgument, vm_size_t argSize) {
     if (messageType == kIOACPIMessageDeviceNotification) {
         if (NULL == target) {
-            DEBUG_LOG("%s kIOACPIMessageDeviceNotification target is null\n", provider->getName());
+            DBGLOG("brkeys", "%s kIOACPIMessageDeviceNotification target is null", provider->getName());
             return kIOReturnError;
         }
         
         auto self = OSDynamicCast(BrightnessKeys, reinterpret_cast<OSMetaClassBase*>(target));
         if (NULL == self) {
-            DEBUG_LOG("%s kIOACPIMessageDeviceNotification target is not a ApplePS2Keyboard\n", provider->getName());
+            DBGLOG("brkeys", "%s kIOACPIMessageDeviceNotification target is not a ApplePS2Keyboard\n", provider->getName());
             return kIOReturnError;
         }
         
         if (NULL != messageArgument) {
-            uint64_t now_abs;
+            PS2KeyInfo info;
             UInt32 arg = *static_cast<UInt32*>(messageArgument);
             switch (arg) {
                 case kIOACPIMessageBrightnessUp:
-                    clock_get_uptime(&now_abs);
-                    self->dispatchKeyboardEventX(BRIGHTNESS_UP, true, now_abs);
-                    clock_get_uptime(&now_abs);
-                    self->dispatchKeyboardEventX(BRIGHTNESS_UP, false, now_abs);
-                    DEBUG_LOG("%s %s ACPI brightness up\n", self->getName(), provider->getName());
+                    info.adbKeyCode = BRIGHTNESS_UP;
+                    info.eatKey = false;
+                    info.goingDown = true;
+                    clock_get_uptime(&info.time);
+                    self->dispatchMessage(kPS2K_notifyKeystroke, &info);
+                    // keyboard consume the message
+                    if (info.eatKey) {
+                        info.eatKey = false;
+                        info.goingDown = false;
+                        clock_get_uptime(&info.time);
+                        self->dispatchMessage(kPS2K_notifyKeystroke, &info);
+                    } else {
+                        clock_get_uptime(&info.time);
+                        self->dispatchKeyboardEventX(BRIGHTNESS_UP, true, info.time);
+                        clock_get_uptime(&info.time);
+                        self->dispatchKeyboardEventX(BRIGHTNESS_UP, false, info.time);
+                    }
+                    DBGLOG("brkeys", "%s ACPI brightness up\n", provider->getName());
                     break;
                     
                 case kIOACPIMessageBrightnessDown:
-                    clock_get_uptime(&now_abs);
-                    self->dispatchKeyboardEventX(BRIGHTNESS_DOWN, true, now_abs);
-                    clock_get_uptime(&now_abs);
-                    self->dispatchKeyboardEventX(BRIGHTNESS_DOWN, false, now_abs);
-                    DEBUG_LOG("%s %s ACPI brightness down\n", self->getName(), provider->getName());
+                    info.adbKeyCode = BRIGHTNESS_DOWN;
+                    info.eatKey = false;
+                    info.goingDown = true;
+                    clock_get_uptime(&info.time);
+                    self->dispatchMessage(kPS2K_notifyKeystroke, &info);
+                    // keyboard consume the message
+                    if (info.eatKey) {
+                        info.eatKey = false;
+                        info.goingDown = false;
+                        clock_get_uptime(&info.time);
+                        self->dispatchMessage(kPS2K_notifyKeystroke, &info);
+                    } else {
+                        clock_get_uptime(&info.time);
+                        self->dispatchKeyboardEventX(BRIGHTNESS_DOWN, true, info.time);
+                        clock_get_uptime(&info.time);
+                        self->dispatchKeyboardEventX(BRIGHTNESS_DOWN, false, info.time);
+                    }
+                    DBGLOG("brkeys", "%s ACPI brightness down", provider->getName());
                     break;
                     
                 case kIOACPIMessageBrightnessCycle:
                 case kIOACPIMessageBrightnessZero:
                 case kIOACPIMessageBrightnessOff:
-                    DEBUG_LOG("%s %s ACPI brightness operation 0x%02x not implemented\n", self->getName(), provider->getName(), *((UInt32 *) messageArgument));
+                    DBGLOG("brkeys", "%s ACPI brightness operation 0x%02x not implemented", provider->getName(), *((UInt32 *) messageArgument));
                     return kIOReturnSuccess;
                     
                 default:
-                    DEBUG_LOG("%s %s unknown ACPI notification 0x%04x\n", self->getName(), provider->getName(), *((UInt32 *) messageArgument));
+                    DBGLOG("brkeys", "%s unknown ACPI notification 0x%04x", provider->getName(), *((UInt32 *) messageArgument));
                     return kIOReturnSuccess;
             }
             if (!self->_panelNotified) {
                 self->_panelNotified = true;
                 self->setProperty(kBrightnessPanel, safeString(provider->getName()));
+                if (arg == kIOACPIMessageBrightnessUp || arg == kIOACPIMessageBrightnessDown)
+                    self->setProperty(kBrightnessKey, info.eatKey);
             }
         } else {
-            DEBUG_LOG("%s %s received unknown kIOACPIMessageDeviceNotification\n", self->getName(), provider->getName());
+            DBGLOG("brkeys", "%s received unknown kIOACPIMessageDeviceNotification", provider->getName());
         }
     } else {
-        DEBUG_LOG("%s received %08X\n", provider->getName(), messageType);
+        DBGLOG("brkeys", "%s received %08X", provider->getName(), messageType);
     }
     return kIOReturnSuccess;
+}
+
+void BrightnessKeys::dispatchMessageGated(int* message, void* data)
+{
+    OSCollectionIterator* i = OSCollectionIterator::withCollection(_notificationServices);
+
+    if (i) {
+        while (IOService* service = OSDynamicCast(IOService, i->getNextObject())) {
+            service->message(*message, this, data);
+        }
+        i->release();
+    }
+}
+
+void BrightnessKeys::dispatchMessage(int message, void* data)
+{
+    if (_notificationServices->getCount() == 0) {
+        SYSLOG("brkeys", "No available notification consumer");
+        return;
+    }
+    commandGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &BrightnessKeys::dispatchMessageGated), &message, data);
+}
+
+void BrightnessKeys::notificationHandlerGated(IOService *newService, IONotifier *notifier)
+{
+    if (notifier == _publishNotify) {
+        DBGLOG("brkeys", "Notification consumer published: %s", safeString(newService->getName()));
+        _notificationServices->setObject(newService);
+    }
+
+    if (notifier == _terminateNotify) {
+        DBGLOG("brkeys", "Notification consumer terminated: %s", safeString(newService->getName()));
+        _notificationServices->removeObject(newService);
+    }
+}
+
+bool BrightnessKeys::notificationHandler(void *refCon, IOService *newService, IONotifier *notifier)
+{
+    commandGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &BrightnessKeys::notificationHandlerGated), newService, notifier);
+    return true;
 }
 
 UInt32 BrightnessKeys::interfaceID() { return NX_EVS_DEVICE_INTERFACE_ADB; }
