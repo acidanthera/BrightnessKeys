@@ -15,6 +15,7 @@ uint32_t ADDPR(debugPrintDelay) = 0;
 // Constants for keyboards
 enum
 {
+    kPS2M_notifyKeyTime = iokit_vendor_specific_msg(110),       // notify of timestamp a non-modifier key was pressed (data is uint64_t*)
     kPS2K_notifyKeystroke = iokit_vendor_specific_msg(202),     // notify of key press (data is PS2KeyInfo*)
 };
 
@@ -250,6 +251,7 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
                         clock_get_uptime(&info.time);
                         self->dispatchKeyboardEventX(BRIGHTNESS_UP, false, info.time);
                     }
+                    self->dispatchMessage(kPS2M_notifyKeyTime, &info.time);
                     DBGLOG("brkeys", "%s ACPI brightness up\n", provider->getName());
                     break;
                     
@@ -271,6 +273,7 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
                         clock_get_uptime(&info.time);
                         self->dispatchKeyboardEventX(BRIGHTNESS_DOWN, false, info.time);
                     }
+                    self->dispatchMessage(kPS2M_notifyKeyTime, &info.time);
                     DBGLOG("brkeys", "%s ACPI brightness down", provider->getName());
                     break;
                     
