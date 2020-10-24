@@ -238,6 +238,7 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
                     info.eatKey = false;
                     info.goingDown = true;
                     clock_get_uptime(&info.time);
+                    self->dispatchMessage(kPS2M_notifyKeyTime, &info.time);
                     self->dispatchMessage(kPS2K_notifyKeystroke, &info);
                     // keyboard consume the message
                     if (info.eatKey) {
@@ -251,7 +252,6 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
                         clock_get_uptime(&info.time);
                         self->dispatchKeyboardEventX(BRIGHTNESS_UP, false, info.time);
                     }
-                    self->dispatchMessage(kPS2M_notifyKeyTime, &info.time);
                     DBGLOG("brkeys", "%s ACPI brightness up\n", provider->getName());
                     break;
                     
@@ -260,6 +260,7 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
                     info.eatKey = false;
                     info.goingDown = true;
                     clock_get_uptime(&info.time);
+                    self->dispatchMessage(kPS2M_notifyKeyTime, &info.time);
                     self->dispatchMessage(kPS2K_notifyKeystroke, &info);
                     // keyboard consume the message
                     if (info.eatKey) {
@@ -273,7 +274,6 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
                         clock_get_uptime(&info.time);
                         self->dispatchKeyboardEventX(BRIGHTNESS_DOWN, false, info.time);
                     }
-                    self->dispatchMessage(kPS2M_notifyKeyTime, &info.time);
                     DBGLOG("brkeys", "%s ACPI brightness down", provider->getName());
                     break;
                     
@@ -381,6 +381,3 @@ const unsigned char * BrightnessKeys::defaultKeymapOfLength(UInt32 * length)
     *length = sizeof(brightnessMap);
     return brightnessMap;
 }
-
-
-
