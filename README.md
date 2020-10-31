@@ -80,8 +80,6 @@ Repl: `08 4E424346 01` `// NameOp "NBCF" OneOp`
 Thanks [Sniki](https://github.com/Sniki) for raising this issue.
 </details>
 
-If your models
-
 #### Credits
 
 - [Apple](https://www.apple.com) for macOS
