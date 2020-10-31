@@ -15,6 +15,7 @@ uint32_t ADDPR(debugPrintDelay) = 0;
 // Constants for keyboards
 enum
 {
+    kPS2M_notifyKeyTime = iokit_vendor_specific_msg(110),       // notify of timestamp a non-modifier key was pressed (data is uint64_t*)
     kPS2K_notifyKeystroke = iokit_vendor_specific_msg(202),     // notify of key press (data is PS2KeyInfo*)
 };
 
@@ -237,6 +238,7 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
                     info.eatKey = false;
                     info.goingDown = true;
                     clock_get_uptime(&info.time);
+                    self->dispatchMessage(kPS2M_notifyKeyTime, &info.time);
                     self->dispatchMessage(kPS2K_notifyKeystroke, &info);
                     // keyboard consume the message
                     if (info.eatKey) {
@@ -258,6 +260,7 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
                     info.eatKey = false;
                     info.goingDown = true;
                     clock_get_uptime(&info.time);
+                    self->dispatchMessage(kPS2M_notifyKeyTime, &info.time);
                     self->dispatchMessage(kPS2K_notifyKeystroke, &info);
                     // keyboard consume the message
                     if (info.eatKey) {
@@ -378,6 +381,3 @@ const unsigned char * BrightnessKeys::defaultKeymapOfLength(UInt32 * length)
     *length = sizeof(brightnessMap);
     return brightnessMap;
 }
-
-
-
