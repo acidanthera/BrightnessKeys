@@ -224,7 +224,7 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
         
         auto self = OSDynamicCast(BrightnessKeys, reinterpret_cast<OSMetaClassBase*>(target));
         if (NULL == self) {
-            DBGLOG("brkeys", "%s kIOACPIMessageDeviceNotification target is not a ApplePS2Keyboard\n", provider->getName());
+            DBGLOG("brkeys", "%s kIOACPIMessageDeviceNotification target is not a ApplePS2Keyboard", provider->getName());
             return kIOReturnError;
         }
         
@@ -250,7 +250,7 @@ IOReturn BrightnessKeys::_panelNotification(void *target, void *refCon, UInt32 m
                         clock_get_uptime(&info.time);
                         self->dispatchKeyboardEventX(BRIGHTNESS_UP, false, info.time);
                     }
-                    DBGLOG("brkeys", "%s ACPI brightness up\n", provider->getName());
+                    DBGLOG("brkeys", "%s ACPI brightness up", provider->getName());
                     break;
                     
                 case kIOACPIMessageBrightnessDown:
