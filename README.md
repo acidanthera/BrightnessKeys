@@ -1,18 +1,14 @@
 BrightnessKeys
-=========================
-
+==============
 [![Build Status](https://travis-ci.com/acidanthera/BrightnessKeys.svg?branch=main)](https://travis-ci.com/acidanthera/BrightnessKeys)
 
-Automatic handling of brightness keys based on ACPI Specification, Appendix B: Video Extensions.
-
+Automatic handling of brightness keys based on ACPI Specification, Appendix B: Video Extensions.  
 Requires Lilu 1.2.0 or newer.
 
 #### Boot arguments
-
 - `-brkeysdbg` to enable debug printing (available in DEBUG binaries).
 
 #### Special cases
-
 Typically no DSDT patches are required. Please remove old `_QXX` to `XQXX` ones.
 
 <details>
@@ -65,27 +61,16 @@ Method (_Q14, 0, NotSerialized)
 
 When `NBCF` is set to zero by default, the method will not notify graphics devices and try to adjust brightness directly. To override that, set `NBCF = 0x01` in SSDT hotpatch, or just replace its declaration using a simple patch.
 
-- For DSDT compiled with older iasl:
-
-Replace `Name (NBCF, 0x00)` to `Name (NBCF, 0x01)`:
-
-Find: `08 4E424346 0A 00` `// NameOp "NBCF" BytePrefix "00"`
-
+- For DSDT compiled with older iasl, replace `Name (NBCF, 0x00)` to `Name (NBCF, 0x01)`:  
+Find: `08 4E424346 0A 00` `// NameOp "NBCF" BytePrefix "00"`  
 Repl: `08 4E424346 0A 01` `// NameOp "NBCF" BytePrefix "01"`
 
-- For DSDT compiled with newer iasl:
-
-Replace `Name (NBCF, Zero)` to `Name (NBCF, One)`:
-
-Find: `08 4E424346 00` `// NameOp "NBCF" ZeroOp`
-
+- For DSDT compiled with newer iasl, replace `Name (NBCF, Zero)` to `Name (NBCF, One)`:  
+Find: `08 4E424346 00` `// NameOp "NBCF" ZeroOp`  
 Repl: `08 4E424346 01` `// NameOp "NBCF" OneOp`
-
-Thanks [Sniki](https://github.com/Sniki) for raising this issue.
 </details>
 
 #### Credits
-
 - [Apple](https://www.apple.com) for macOS
 - [usr-sse2](https://github.com/usr-sse2) for seperating this driver from VoodooPS2
 - [vit9696](https://github.com/vit9696) for `DeviceInfo` API from Lilu
