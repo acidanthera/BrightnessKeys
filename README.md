@@ -7,6 +7,10 @@ Automatic handling of brightness keys based on ACPI Specification, Appendix B: V
 
 Requires Lilu 1.2.0 or newer.
 
+#### Boot arguments
+
+- `-brkeysdbg` to enable debug printing (available in DEBUG binaries).
+
 #### Special cases
 
 Typically no DSDT patches are required. Please remove old `_QXX` to `XQXX` ones.
