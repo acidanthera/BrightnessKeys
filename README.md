@@ -1,6 +1,6 @@
 BrightnessKeys
 ==============
-[![Build Status](https://travis-ci.com/acidanthera/BrightnessKeys.svg?branch=main)](https://travis-ci.com/acidanthera/BrightnessKeys)
+[![Build Status](https://github.com/acidanthera/BrightnessKeys/workflows/CI/badge.svg?branch=main)](https://github.com/acidanthera/BrightnessKeys/actions) [![Scan Status](https://scan.coverity.com/projects/22193/badge.svg?flat=1)](https://scan.coverity.com/projects/22193)
 
 Automatic handling of brightness keys based on ACPI Specification, Appendix B: Video Extensions.  
 Requires Lilu 1.2.0 or newer.
