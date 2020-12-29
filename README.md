@@ -72,6 +72,6 @@ Repl: `08 4E424346 01` `// NameOp "NBCF" OneOp`
 
 #### Credits
 - [Apple](https://www.apple.com) for macOS
-- [usr-sse2](https://github.com/usr-sse2) for seperating this driver from VoodooPS2
+- [usr-sse2](https://github.com/usr-sse2) for separating this driver from VoodooPS2
 - [vit9696](https://github.com/vit9696) for `DeviceInfo` API from Lilu
 - [zhen-zen](https://github.com/zhen-zen) for implementation
