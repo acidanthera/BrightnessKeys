@@ -9,7 +9,8 @@ Requires Lilu 1.2.0 or newer.
 - `-brkeysdbg` to enable debug printing (available in DEBUG binaries).
 
 #### Special cases
-Typically no DSDT patches are required. Please remove old `_QXX` to `XQXX` ones.
+Typically no DSDT patches are required. Please remove old `_QXX` to `XQXX` ones.  
+On some old models, may be required add ACPI patch `_OSI to XOSI` and `SSDT-XOSI`.  
 
 <details>
 <summary>Spoiler: On some old ThinkPad models, additional handling may be required.</summary>
