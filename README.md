@@ -9,7 +9,7 @@ Requires Lilu 1.2.0 or newer.
 - `-brkeysdbg` to enable debug printing (available in DEBUG binaries).
 
 #### Special cases
-Typically no DSDT patches are required. Please remove old `_QXX` to `XQXX` ones.  
+Typically no DSDT patches are required. Please remove old `_Qxx` to `XQxx` ones.  
 On some models, may be required add ACPI patch `_OSI to XOSI` and `SSDT-XOSI`.  
 
 <details>
