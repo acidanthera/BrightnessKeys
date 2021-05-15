@@ -111,7 +111,7 @@ void BrightnessKeys::getBrightnessPanel() {
         //
         // Some vendors just won't follow the specs and update their code
         //
-        if (strncmp(_panel->getName(), "DD02", strlen("DD02"))) {
+        if (_panel == nullptr || strncmp(_panel->getName(), "DD02", strlen("DD02"))) {
             auto fallbackPanel = info->videoBuiltin->childFromPath("DD02", gIODTPlane);
             if (fallbackPanel != nullptr) {
                 _panelFallback = getAcpiDevice(fallbackPanel);
