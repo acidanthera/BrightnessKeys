@@ -11,6 +11,7 @@ Requires Lilu 1.2.0 or newer.
 #### Special cases
 Typically no DSDT patches are required. Please remove old `_Qxx` to `XQxx` ones.  
 On some models, may be required add ACPI patch `_OSI to XOSI` and `SSDT-XOSI`.  
+On DELL models, may be required add ACPI patch `OSID to XSID` and `_OSI to XOSI` and `SSDT-XOSI`.
 
 <details>
 <summary>Spoiler: On some old ThinkPad models, additional handling may be required.</summary>
