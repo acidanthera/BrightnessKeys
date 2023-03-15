@@ -97,7 +97,7 @@ void BrightnessKeys::getBrightnessPanel() {
         //
         // On some laptops, like AMD laptops, the panel can be of legacy type.
         //
-        _panel = getAcpiDevice(getDeviceByAddress(info->videoBuiltin, kIOACPILegacyPanel));
+        if (_panel == nullptr) { _panel = getAcpiDevice(getDeviceByAddress(info->videoBuiltin, kIOACPILegacyPanel)); }
 
         //
         // On some newer laptops, address of Display Output Device (DOD)
