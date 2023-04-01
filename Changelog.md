@@ -1,5 +1,7 @@
 BrightnessKeys Changelog
 ======================================
+#### v1.0.3
+- Added legacy panel support in ACPI (thx @ChefKissInc)
 
 #### v1.0.2
 - Fixed potential null pointer dereference crash
