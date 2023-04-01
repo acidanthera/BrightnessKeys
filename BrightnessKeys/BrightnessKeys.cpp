@@ -95,6 +95,11 @@ void BrightnessKeys::getBrightnessPanel() {
         _panel = getAcpiDevice(getDeviceByAddress(info->videoBuiltin, kIOACPILCDPanel, kIOACPIDisplayTypeMask));
         
         //
+        // On some laptops, like AMD laptops, the panel can be of legacy type.
+        //
+        if (_panel == nullptr) { _panel = getAcpiDevice(getDeviceByAddress(info->videoBuiltin, kIOACPILegacyPanel)); }
+
+        //
         // On some newer laptops, address of Display Output Device (DOD)
         // may not export panel information. We can verify it by whether
         // a DOD of CRT type present, which should present when types are
